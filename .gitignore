@@ -1,0 +1,8 @@
+/venv
+*.swp
+__pycache__
+dist
+build
+
+*.pyc
+*.pyo
