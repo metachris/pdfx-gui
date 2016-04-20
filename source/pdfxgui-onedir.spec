@@ -2,9 +2,12 @@
 
 block_cipher = None
 
+__version__ = "0.1.0"
+
+APP_NAME = "PDFx"
 
 datas = [
-    ("qml/*.qml", "qml"),
+    ("qml/*", "qml"),
     ("images/*.png", "images")
 ]
 
@@ -24,7 +27,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='pdfxgui',
+          name=APP_NAME,
           debug=False,
           strip=False,
           upx=True,

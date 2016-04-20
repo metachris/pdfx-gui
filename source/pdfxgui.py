@@ -26,6 +26,12 @@ from pdfx.downloader import check_refs, download_refs
 # from threadpool import ThreadPool
 import settings
 
+__version__ = "0.1.0"
+__author__ = "Chris Hager"
+__email__ = "chris@linuxuser.at"
+__contact__ = "https://www.metachris.com"
+__copyright__ = "Copyright 2015 Chris Hager"
+
 IS_FROZEN = False
 if getattr(sys, 'frozen', False):
         # we are running in a bundle
