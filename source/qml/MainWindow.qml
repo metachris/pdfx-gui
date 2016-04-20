@@ -5,6 +5,8 @@ import QtQuick.Window 2.2
 import QtQuick.Controls 1.2
 import QtQuick.Controls.Styles 1.4
 
+import "shared.js" as SharedScripts
+
 ApplicationWindow {
     id: window
     visible: true
@@ -31,25 +33,6 @@ ApplicationWindow {
         statusProgressBar.value = value
     }
 
-    function openPdfs(urls) {
-        var pdfs = []
-        var endsWithPDF = /pdf$/;
-        urls.forEach(function(url) {
-            if (endsWithPDF.test(url.toLowerCase())) {
-                // console.log("is pdf:", url)
-                pdfs.push(url)
-            }
-        });
-
-        if (pdfs.length === 0) {
-            console.log("No PDFs!")
-            return false
-        }
-
-        window.signalOpenPdfs(pdfs)
-        return true
-    }
-
     StateGroup {
         id: windowStateGroup
         states: [
@@ -67,18 +50,31 @@ ApplicationWindow {
         Menu {
             title: "File"
             MenuItem {
-                text: "Open..."
+                text: "Open PDF"
                 shortcut: StandardKey.Open
                 onTriggered: {
                     fileDialog.open()
                 }
             }
+
+            MenuItem {
+                text: "Close Window"
+                shortcut: StandardKey.Close
+                onTriggered: {
+                    window.close()
+                }
+            }
+
             MenuItem {
                 text: "about.*"
+                onTriggered: {
+                    Qt.openUrlExternally("https://www.metachris.com/pdfx")
+                }
             }
-            MenuItem {
-                text: "preferences"
-            }
+            // MenuItem {
+            //     text: "preferences"
+            // }
+
             // Menu {
             //     title: "Open Recent"
             //
@@ -89,11 +85,11 @@ ApplicationWindow {
         }
     }
 
-    Action {
-        id: aboutAction
-        text: "About"
-        onTriggered: aboutDialog.open()
-    }
+    // Action {
+    //     id: aboutAction
+    //     text: "About"
+    //     onTriggered: aboutDialog.open()
+    // }
 
     statusBar: StatusBar {
         RowLayout {
@@ -105,7 +101,7 @@ ApplicationWindow {
                 Layout.preferredWidth: 300
                 Layout.maximumWidth: 300
 
-                text: "Read Only"
+                text: ""
             }
 
             ProgressBar {
@@ -172,20 +168,20 @@ ApplicationWindow {
         ]
 
         onDropped: {
-            var hasPdfs = openPdfs(drop.urls)
+            var hasPdfs = SharedScripts.openPdfs(drop.urls, window.signalOpenPdfs)
             drop.accepted = hasPdfs
         }
     }
 
     FileDialog {
         id: fileDialog
-        title: "Please choose a PDF document"
+        title: "Choose a PDF document"
         folder: shortcuts.home
         selectMultiple: true
         nameFilters: [ "PDF document (*.pdf)", "All files (*)" ]
         onAccepted: {
-            openPdfs(fileDialog.fileUrls)
             fileDialog.folder = fileDialog.fileUrls[0]
+            SharedScripts.openPdfs(fileDialog.fileUrls, window.signalOpenPdfs)
         }
     }
 }

@@ -15,9 +15,16 @@ from PyQt5.QtCore import QObject, QUrl, Qt, QVariant, pyqtSignal, QThread, QSort
 from PyQt5.QtQml import QJSValue
 from PyQt5 import QtCore, QtQuick
 
-from threadpool import ThreadPool
+# Sentry raven client
+from raven import Client as SentryClient
+
+# PDFx
 import pdfx
 from pdfx.downloader import check_refs, download_refs
+
+# Local modules
+# from threadpool import ThreadPool
+import settings
 
 IS_FROZEN = False
 if getattr(sys, 'frozen', False):
@@ -27,6 +34,8 @@ if getattr(sys, 'frozen', False):
 else:
         # we are running in a normal Python environment
         BUNDLE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+SENTRY = SentryClient(settings.SENTRY_CLIENT_URI)
 
 ERROR_FILE_NOT_FOUND = 1
 ERROR_DOWNLOAD = 2
@@ -61,7 +70,7 @@ REFS_TEST = [
 ]
 
 PDFX_INSTANCES = {}
-
+MAINWINDOW_INSTANCE = None
 
 # class MyTableModel(QAbstractListModel):
 #     def __init__(self, datain, headerdata, parent=None, *args):
@@ -235,9 +244,11 @@ class PdfDetailWindow:
         self.window.download.connect(self.download)
         self.window.signalCheckLinks.connect(self.checkLinks)
         self.window.shutdown.connect(self.onClosing)
+        self.window.signalOpenMainWindow.connect(self.openMainWindow)
 
         if self.fake:
-            self.references = REFS_TEST
+            # self.references = REFS_TEST
+            self.references = []
         else:
             # Sort references by type
             ref_set = PDFX_INSTANCES[pdf_uri].get_references()
@@ -281,6 +292,14 @@ class PdfDetailWindow:
         # if self.check_links_thread:
         #     self.check_links_thread.quit()
 
+    def openMainWindow(self):
+        global MAINWINDOW_INSTANCE
+        if not MAINWINDOW_INSTANCE:
+            MAINWINDOW_INSTANCE = PDFxGui()
+        MAINWINDOW_INSTANCE.window.show()
+        MAINWINDOW_INSTANCE.window.raise_()
+        MAINWINDOW_INSTANCE.window.requestActivate()
+
     def download(self, selected_item_indexes, target_folder_uri):
         """
         selected_item_indexes is a [QJSValue](http://doc.qt.io/qt-5/qjsvalue.html) Array
@@ -299,6 +318,11 @@ class PdfDetailWindow:
         for item_index in item_indexes:
             if self.references[item_index].reftype in ["pdf"]:
                 refs.append(self.references[item_index])
+
+        if not refs:
+            self.window.setStatusText("No pdf documents selected")
+            self.window.downloadFinished()
+            return
 
         # Filter out only "url" and "pdf" references
         self.num_downloads = len(refs)
@@ -404,6 +428,7 @@ class PDFxGui:
         def signal_finished():
             print("all finished")
             self.window.setState("")
+            self.window.setStatusText("")
 
         self.window.setState("busy")
         open_thread = OpenPdfQThread(pdf_urls)
@@ -417,6 +442,8 @@ class PDFxGui:
 
 
 if __name__ == "__main__":
+    # SENTRY.captureMessage("ello")
+
     os.chdir(BUNDLE_DIR)
     print('frozen', IS_FROZEN)
     print('bundle dir is', BUNDLE_DIR)
@@ -424,18 +451,23 @@ if __name__ == "__main__":
     print('sys.executable is', sys.executable)
     print('os.getcwd is', os.getcwd())
 
-    #print([f for f in os.listdir('.')])
-    #print([f for f in os.listdir('./qml')])
-
     app = QGuiApplication(sys.argv)
 
-    gui = PDFxGui()
-    gui.window.show()
+    MAINWINDOW_INSTANCE = PDFxGui()
+    MAINWINDOW_INSTANCE.window.show()
 
     # win1 = PdfDetailWindow("/tmp/some-test-funky.pdf", fake=True)
     # win1.window.show()
 
-    sys.exit(app.exec_())
+    try:
+        status_code = app.exec_()
+    except:
+        # if this is packaged by PyInstaller, report crashes to sentry
+        if IS_FROZEN:
+            SENTRY.captureException()
+        raise
+    finally:
+        sys.exit(status_code)
 
     # print(self.app)
     # print(dir(self.app))

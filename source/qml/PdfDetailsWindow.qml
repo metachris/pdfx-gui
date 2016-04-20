@@ -1,4 +1,3 @@
-// http://stackoverflow.com/a/21317927/5433572
 import QtQuick 2.6
 import QtQuick.Layouts 1.2
 import QtQuick.Dialogs 1.2
@@ -6,12 +5,16 @@ import QtQuick.Window 2.2
 import QtQuick.Controls 1.2
 import QtQuick.Controls.Styles 1.4
 
+import "shared.js" as SharedScripts
+
 ApplicationWindow {
     id: window
     visible: true
 
     signal download(var uris, string target_folder)
     signal signalCheckLinks()
+    signal signalOpenPdfs(var uris)
+    signal signalOpenMainWindow()
     signal shutdown()
 
     onClosing: {
@@ -47,9 +50,9 @@ ApplicationWindow {
     function startDownload(targetFolder) {
         var items = []
         tableView.selection.forEach(function(rowIndex) { items.push(rowIndex) })
-        download(items, targetFolder)
         windowStateGroup.state = "busy"
         statusColumn.visible = true
+        download(items, targetFolder)
     }
 
     function downloadFinished() {
@@ -58,9 +61,9 @@ ApplicationWindow {
     }
 
     function checkLinks() {
-        signalCheckLinks()
         windowStateGroup.state = "busy"
         statusColumn.visible = true
+        signalCheckLinks()
     }
 
     function checkLinksFinished() {
@@ -90,6 +93,47 @@ ApplicationWindow {
             }
         ]
     }
+
+    menuBar: MenuBar {
+        Menu {
+            title: "File"
+            MenuItem {
+                text: "New Window"
+                shortcut: StandardKey.New
+                onTriggered: {
+                    console.log("pdfwindow new")
+                    signalOpenMainWindow()
+                }
+            }
+            MenuItem {
+                text: "Close Window"
+                shortcut: StandardKey.Close
+                onTriggered: {
+                    window.close()
+                }
+            }
+            // MenuItem {
+            //     text: "Open..."
+            //     shortcut: StandardKey.Open
+            //     onTriggered: {
+            //         fileDialog.open()
+            //     }
+            // }
+            MenuItem {
+                text: "about.*"
+                onTriggered: {
+                    Qt.openUrlExternally("https://www.metachris.com/pdfx")
+                }
+            }
+        }
+    }
+
+    // Action {
+    //     id: aboutAction
+    //     text: "New"
+    //     shortcut: StandardKey.New
+    //     onTriggered: console.log("new")
+    // }
 
     toolBar: ToolBar {
         Button {
@@ -329,6 +373,18 @@ ApplicationWindow {
         onAccepted: {
             downloadFolderDialog.folder = downloadFolderDialog.fileUrls[0]
             startDownload(downloadFolderDialog.fileUrls[0])
+        }
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: "Choose a PDF document"
+        folder: shortcuts.home
+        selectMultiple: true
+        nameFilters: [ "PDF document (*.pdf)", "All files (*)" ]
+        onAccepted: {
+            fileDialog.folder = fileDialog.fileUrls[0]
+            SharedScripts.openPdfs(fileDialog.fileUrls, window.signalOpenPdfs)
         }
     }
 }

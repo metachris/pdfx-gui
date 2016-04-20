@@ -3,6 +3,8 @@
 block_cipher = None
 
 
+APP_NAME = "PDFx"
+
 datas = [
     ("qml/*.qml", "qml"),
     ("images/*.png", "images")
@@ -26,12 +28,21 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name='pdfxgui',
+          name=APP_NAME,
           debug=False,
           strip=False,
           upx=True,
           console=False , icon='images/icon.icns')
 app = BUNDLE(exe,
-             name='pdfxgui.app',
+             name='PDFx.app',
              icon='images/icon.icns',
-             bundle_identifier='com.metachris.pdfx')
+             bundle_identifier='com.metachris.pdfx',
+             info_plist={
+                'CFBundleName': APP_NAME,
+                'CFBundleDisplayName': APP_NAME,
+                'CFBundleGetInfoString': "Extract references from PDF documents",
+                'CFBundleIdentifier': "com.metachris.osx.sandwich",
+                'CFBundleVersion': "0.1.0",
+                'CFBundleShortVersionString': "0.1.0",
+                'NSHumanReadableCopyright': u"Copyright © 2016, Chris Hager, All Rights Reserved"
+            })
