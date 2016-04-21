@@ -1,3 +1,5 @@
+var __version__ = "0.1.1"
+
 function openPdfs(urls, openPdfCallback) {
     var pdfs = []
     var endsWithPDF = /pdf$/;

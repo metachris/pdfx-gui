@@ -15,6 +15,7 @@ ApplicationWindow {
     signal signalCheckLinks()
     signal signalOpenPdfs(var uris)
     signal signalOpenMainWindow()
+    signal signalShowAboutWindow()
     signal shutdown()
 
     onClosing: {
@@ -121,9 +122,7 @@ ApplicationWindow {
             // }
             MenuItem {
                 text: "about.*"
-                onTriggered: {
-                    Qt.openUrlExternally("https://www.metachris.com/pdfx")
-                }
+                onTriggered: signalShowAboutWindow()
             }
         }
     }

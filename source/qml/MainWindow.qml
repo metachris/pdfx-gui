@@ -20,6 +20,7 @@ ApplicationWindow {
     title: "PDFx"
 
     signal signalOpenPdfs(var uris)
+    signal signalShowAboutWindow()
 
     function setState(state) {
         windowStateGroup.state = state
@@ -67,9 +68,7 @@ ApplicationWindow {
 
             MenuItem {
                 text: "about.*"
-                onTriggered: {
-                    Qt.openUrlExternally("https://www.metachris.com/pdfx")
-                }
+                onTriggered: signalShowAboutWindow()
             }
             // MenuItem {
             //     text: "preferences"

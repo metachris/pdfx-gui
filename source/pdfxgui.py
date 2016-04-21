@@ -26,11 +26,14 @@ from pdfx.downloader import check_refs, download_refs
 # from threadpool import ThreadPool
 import settings
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Chris Hager"
 __email__ = "chris@linuxuser.at"
 __contact__ = "https://www.metachris.com"
 __copyright__ = "Copyright 2015 Chris Hager"
+
+# Whether to show debug output
+DEBUG = True
 
 IS_FROZEN = False
 if getattr(sys, 'frozen', False):
@@ -77,6 +80,15 @@ REFS_TEST = [
 
 PDFX_INSTANCES = {}
 MAINWINDOW_INSTANCE = None
+ABOUTWINDOW_INSTANCE = None
+
+def show_about_window():
+    global ABOUTWINDOW_INSTANCE
+    if not ABOUTWINDOW_INSTANCE:
+        ABOUTWINDOW_INSTANCE = AboutWindow()
+    ABOUTWINDOW_INSTANCE.window.show()
+    ABOUTWINDOW_INSTANCE.window.raise_()
+    ABOUTWINDOW_INSTANCE.window.requestActivate()
 
 # class MyTableModel(QAbstractListModel):
 #     def __init__(self, datain, headerdata, parent=None, *args):
@@ -247,10 +259,12 @@ class PdfDetailWindow:
         self.window = self.engine.rootObjects()[0]
         self.window.setTitle(os.path.basename(pdf_uri))
 
+        # Connect signals
         self.window.download.connect(self.download)
         self.window.signalCheckLinks.connect(self.checkLinks)
         self.window.shutdown.connect(self.onClosing)
         self.window.signalOpenMainWindow.connect(self.openMainWindow)
+        self.window.signalShowAboutWindow.connect(show_about_window)
 
         if self.fake:
             # self.references = REFS_TEST
@@ -399,14 +413,15 @@ class PDFxGui:
 
     def __init__(self):
         self.threads = []
-        if not self.window:
-            # Create and setup window
-            self.engine = QQmlApplicationEngine()
-            self.engine.load(self.QML_FILE)
-            self.window = self.engine.rootObjects()[0]
+        
+        # Create and setup window
+        self.engine = QQmlApplicationEngine()
+        self.engine.load(self.QML_FILE)
+        self.window = self.engine.rootObjects()[0]
 
-            # Connect signals
-            self.window.signalOpenPdfs.connect(self.open_pdf)
+        # Connect signals
+        self.window.signalOpenPdfs.connect(self.open_pdf)
+        self.window.signalShowAboutWindow.connect(show_about_window)
 
     def open_pdf(self, urls):
         num_pdfs = urls.property("length").toInt()
@@ -447,23 +462,33 @@ class PDFxGui:
         self.threads.append(open_thread)
 
 
+class AboutWindow:
+    QML_FILE = "qml/AboutWindow.qml"
+
+    def __init__(self):
+        # Create window from QML via QQmlApplicationEngine
+        self.engine = QQmlApplicationEngine()
+        self.engine.load(self.QML_FILE)
+        self.window = self.engine.rootObjects()[0]
+
+
 if __name__ == "__main__":
     # SENTRY.captureMessage("ello")
 
     os.chdir(BUNDLE_DIR)
-    print('frozen', IS_FROZEN)
-    print('bundle dir is', BUNDLE_DIR)
-    print('sys.argv[0] is', sys.argv[0])
-    print('sys.executable is', sys.executable)
-    print('os.getcwd is', os.getcwd())
+
+    if DEBUG:
+        print('frozen', IS_FROZEN)
+        print('bundle dir is', BUNDLE_DIR)
+        print('sys.argv[0] is', sys.argv[0])
+        print('sys.executable is', sys.executable)
+        print('os.getcwd is', os.getcwd())
 
     app = QGuiApplication(sys.argv)
 
     MAINWINDOW_INSTANCE = PDFxGui()
-    MAINWINDOW_INSTANCE.window.show()
 
-    # win1 = PdfDetailWindow("/tmp/some-test-funky.pdf", fake=True)
-    # win1.window.show()
+    # PdfDetailWindow("/tmp/some-test-funky.pdf", fake=True)
 
     try:
         status_code = app.exec_()

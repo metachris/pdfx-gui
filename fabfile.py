@@ -30,16 +30,18 @@ def version(semverVersion=None):
             return
 
     # Update the __version__ strings now
-    local("""grep "^__version__ =" * -rl | xargs sed -i 's/^__version__\s\{0,1\}=.*./__version__ = "%s"/g' """ % semverVersion)
+    local("""grep "__version__ =" * -rl | xargs sed -i 's/__version__ =.*./__version__ = "%s"/g' """ % semverVersion)
 
 
 def clean():
+    """ Remove all cached and temporary files as well as the dist folder """
     _chdir()
     local("find ./ -name *.pyc -exec rm -f {} \;")
     local("rm -rf build dist __pycache__ source/__pycache__")
 
 
 def buildAppOSX(file_spec="pdfxgui-onefile.spec"):
+    """ Build PDFx.app """
     cmd = """pyinstaller \
         --log-level DEBUG \
         --distpath {distpath} \
@@ -57,13 +59,13 @@ def buildAppOSX(file_spec="pdfxgui-onefile.spec"):
         local(cmd)
 
 
-def makeSpec():
-    _chdir("source")
-    cmd = """pyi-makespec \
-        --name pdfxgui \
-        --onefile \
-        --windowed \
-        --icon images/icon.icns \
-        --osx-bundle-identifier com.metachris.pdfx \
-        pdfxgui.py"""
-    local(cmd)
+# def makeSpec():
+#     _chdir("source")
+#     cmd = """pyi-makespec \
+#         --name pdfxgui \
+#         --onefile \
+#         --windowed \
+#         --icon images/icon.icns \
+#         --osx-bundle-identifier com.metachris.pdfx \
+#         pdfxgui.py"""
+#     local(cmd)
