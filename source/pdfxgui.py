@@ -25,8 +25,8 @@ from pdfx.downloader import check_refs, download_refs
 # Local modules
 # from threadpool import ThreadPool
 import settings
+from settings import __version__
 
-__version__ = "0.1.1"
 __author__ = "Chris Hager"
 __email__ = "chris@linuxuser.at"
 __contact__ = "https://www.metachris.com"

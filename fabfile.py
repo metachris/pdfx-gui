@@ -5,12 +5,17 @@ import os
 from fabric.api import local, run, env
 from fabric.context_managers import prefix, shell_env
 from fabric.operations import prompt
+import source.settings
+
+env.use_ssh_config = True
+
+# Current app version
+VERSION = source.settings.__version__   # eg. 1.1.0
+VERSION_FN = VERSION.replace(".", "_")  # eq. 1_1_0
 
 # Change to fabfile directory, to make relative paths work
 DIR_SCRIPT = os.path.dirname(os.path.realpath(__file__))
 os.chdir(DIR_SCRIPT)
-
-env.use_ssh_config = True
 
 DISTPATH = os.path.join(DIR_SCRIPT, "dist")
 WORKPATH = os.path.join(DIR_SCRIPT, "build")
@@ -58,6 +63,27 @@ def buildAppOSX(file_spec="pdfxgui-onefile.spec"):
     with shell_env(QT5DIR="/usr/local/Cellar/qt5/5.6.0"):
         local(cmd)
 
+    _chdir("dist")
+    fn = "PDFx-%s.zip" % VERSION_FN 
+    local("zip -r %s PDFx.app" % fn)
+
+    print("-" * 20)
+    print("Successfully build: dist/PDFx, dist/PDFx.app, dist/%s" % fn)
+
+
+def uploadToS3(fn=None):
+    if not fn:
+        fn = "dist/PDFx-%s.zip" % VERSION_FN
+    print("Uploading %s to S3..." % fn)
+    if not os.path.isfile(fn):
+        print("Error: file not found")
+        exit(1)
+
+    cmd = "aws s3 cp %s s3://pdfx/downloads/ --acl public-read" % fn
+    local(cmd)
+
+    url = "https://s3.amazonaws.com/pdfx/downloads/%s" % os.path.basename(fn)
+    print("Upload successful. Link: %s" % url)
 
 # def makeSpec():
 #     _chdir("source")
